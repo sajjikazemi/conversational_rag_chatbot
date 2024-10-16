@@ -1,4 +1,5 @@
 from website import Website
+from openai import OpenAI
 
 def user_prompt_for(website: Website):
     user_prompt = f"You are looking at a website titled {website.title}"
@@ -13,3 +14,11 @@ def messages_for(website: Website, system_prompt: str):
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt_for(website)}
     ]
+
+def summarize(url: str, openai: OpenAI):
+    website = Website(url)
+    response = openai.chat.completions.create(
+        model = "gpt-40-mini",
+        messages = messages_for(website) 
+    )
+    return response.choices[0].message.content
