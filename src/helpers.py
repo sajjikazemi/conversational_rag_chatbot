@@ -15,10 +15,10 @@ def messages_for(website: Website, system_prompt: str):
         {"role": "user", "content": user_prompt_for(website)}
     ]
 
-def summarize(url: str, openai: OpenAI):
+def summarize(url: str, openai: OpenAI, system_prompt: str):
     website = Website(url)
     response = openai.chat.completions.create(
-        model = "gpt-40-mini",
-        messages = messages_for(website) 
+        model = "gpt-4o-mini",
+        messages = messages_for(website, system_prompt) 
     )
     return response.choices[0].message.content
