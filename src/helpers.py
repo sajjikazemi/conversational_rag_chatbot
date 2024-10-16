@@ -7,3 +7,9 @@ def user_prompt_for(website: Website):
     If it includes news or announcements, then summarize these too.\n\n"
     user_prompt += website.text
     return user_prompt
+
+def messages_for(website: Website, system_prompt: str):
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt_for(website)}
+    ]
