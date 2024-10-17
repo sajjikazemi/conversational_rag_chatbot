@@ -54,3 +54,21 @@ def get_all_details(url: str, openai: OpenAI, model, link_system_prompt):
         result += f"\n\n{link['type']}\n"
         result += Website(link["url"]).get_contents()
     return result
+
+def get_brochure_user_prompt(company_name: str, url: str, openai: OpenAI, model, link_system_prompt):
+    user_prompt = f"You are looking at a company called: {company_name}\n"
+    user_prompt += f"Here are the contents of its landing page and other relevant pages; use this information to build a short brochure of the company in markdown.\n"
+    user_prompt += get_all_details(url, openai=openai, model=model, link_system_prompt=link_system_prompt)
+    user_prompt = user_prompt[:20_000] # Truncate if more than 20,000 characters
+    return user_prompt
+
+def create_brochure(company_name: str, url: str, openai: OpenAI, model, link_system_prompt, system_prompt: str):
+    response = openai.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": get_brochure_user_prompt(company_name, url, openai, model, link_system_prompt)}
+        ],
+    )
+    result = response.choices[0].message.content
+    return result
