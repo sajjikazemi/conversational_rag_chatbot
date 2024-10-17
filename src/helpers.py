@@ -1,5 +1,6 @@
 from website import Website
 from openai import OpenAI
+import json
 
 def user_prompt_for(website: Website):
     user_prompt = f"You are looking at a website titled {website.title}"
@@ -30,3 +31,16 @@ def get_links_user_prompt(website: Website):
         user_prompt += "Links (some might be relative links):\n"
         user_prompt += "\n".join(website.links)
         return user_prompt
+
+def get_links(url: str, openai: OpenAI, model, link_system_prompt: str):
+    website = Website(url)
+    completion = openai.chat.completions.create(
+         model=model,
+         messages=[
+              {"role": "system", "content": link_system_prompt},
+              {"role": "user", "content": get_links_user_prompt(website)}
+         ],
+         response_format={"type": "json_object"}
+    )
+    result = completion.choices[0].message.content
+    return json.loads(result)
