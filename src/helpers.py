@@ -44,3 +44,13 @@ def get_links(url: str, openai: OpenAI, model, link_system_prompt: str):
     )
     result = completion.choices[0].message.content
     return json.loads(result)
+
+def get_all_details(url: str, openai: OpenAI, model, link_system_prompt):
+    result = "Landing page:\n"
+    result += Website(url).get_contents()
+    links = get_links(url, openai=openai, model=model, link_system_prompt=link_system_prompt)
+    print("Found links:", links)
+    for link in links["links"]:
+        result += f"\n\n{link['type']}\n"
+        result += Website(link["url"]).get_contents()
+    return result
