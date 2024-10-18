@@ -1,6 +1,8 @@
 from website import Website
 from openai import OpenAI
 import json
+import anthropic
+import google.generativeai
 
 def user_prompt_for(website: Website):
     user_prompt = f"You are looking at a website titled {website.title}"
@@ -72,3 +74,58 @@ def create_brochure(company_name: str, url: str, openai: OpenAI, model, link_sys
     )
     result = response.choices[0].message.content
     return result
+
+def use_gpt(model: str, openai: OpenAI, temperature: float, prompts, stream: bool = False):
+    if not stream:
+        completion = openai.chat.completions.create(
+            model=model,
+            messages=prompts,
+            temperature=temperature
+            )
+        print(completion.choices[0].message.content)
+    else:
+        completion = openai.chat.completions.create(
+            model=model,
+            messages=prompts,
+            temperature=temperature,
+            stream=True
+            )
+        for chunk in completion:
+            if chunk.choices[0].delta.content is not None:
+                content = chunk.choices[0].delta.content
+                print(content, end='', flush=True)
+        print()
+        
+
+def use_claude(model: str, claude: anthropic, temperature: float, system_message: str, user_prompt: str, stream: bool = False):
+    if  not stream:    
+        message = claude.messages.create(
+            model=model,
+            max_token=200,
+            temperature=temperature,
+            system=system_message,
+            messages=[
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        print(message.content[0].text)
+    else:
+        message = claude.messages.stream(
+            model=model,
+            max_tokens=200,
+            temperature=temperature,
+            messages=[
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        with message as stream:
+            for text in stream.text_stream:
+                print(text, end="", flush=True)
+
+def use_gemini(model: str, system_message: str, user_prompt: str):
+    gemini = google.generativeai.GenerativeModel(
+        model_name=model,
+        system_instruction=system_message
+    )
+    response = gemini.generate_content(user_prompt)
+    print(response.text)
