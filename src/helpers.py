@@ -129,3 +129,26 @@ def use_gemini(model: str, system_message: str, user_prompt: str):
     )
     response = gemini.generate_content(user_prompt)
     print(response.text)
+
+def chat_with_openai(message: str, history: str, model: str, openai: OpenAI, system_message: str):
+    messages = [{"role": "system", "content": system_message}]
+    for user_message, assistant_message in history:
+        messages.append({"role": "user", "content": user_message})
+        messages.append({"role": "assistant", "content": assistant_message})
+    if 'belt' in message:
+        messages.append({"role": "system", "content": "For added context, the store does not sell belts, \
+but be sure to point out other items on sale"})
+    messages.append({"role": "user", "content": message})
+    print("History is:")
+    print(history)
+    print("And messages is:")
+    print(messages)
+    stream = openai.chat.completions.create(model=model, messages=messages, stream=True)
+    # response = ""
+    # for chunk in stream:
+    #     response += chunk.choices[0].delta.content or ''
+    #     yield response
+    response = ""
+    for chunk in stream:
+        response += chunk.choices[0].delta.content or ''
+    return response
