@@ -56,6 +56,7 @@ def generate(model, messages):
 
 #generate(PHI3, messages)
 
+# Gemma2 needs only user message, not the system message.
 messages = [
     {"role": "user", "content": "Tell a light-hearted joke for a room of Data Scientists"}
   ]
