@@ -7,10 +7,21 @@ import google.generativeai
 import anthropic
 import gradio as gr
 import subprocess
+from huggingface_hub import login
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
 load_dotenv()
 os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', 'your-key-if-not-using-env')
 os.environ['ANTHROPIC_API_KEY'] = os.getenv('ANTHROPIC_API_KEY', 'your-key-if-not-using-env')
+hf_token = os.environ['HF_TOKEN']
+login(hf_token, add_to_git_credential=True)
+
+## Open source models
+code_qwen = "Qwen/CodeQwen1.5-7B-Chat"
+code_gemma = "google/codegemma-7b-it"
+CODE_QWEN_URL = "https://h1vdol7jxhje3mpn.us-east-1.aws.endpoints.huggingface.cloud"
+CODE_GEMMA_URL = "https://c5hggiyqachmgnqg.us-east-1.aws.endpoints.huggingface.cloud"
 
 # initialize
 # NOTE - option to use ultra-low cost models by uncommenting last 2 lines
@@ -211,13 +222,96 @@ def execute_cpp(code):
             return f"An error occurred:\n{e.stderr}"
 
 
+# with gr.Blocks(css=css) as ui:
+#     gr.Markdown("## Convert code from Python to C++")
+#     with gr.Row():
+#         python = gr.Textbox(label="Python code:", value=python_hard, lines=10)
+#         cpp = gr.Textbox(label="C++ code:", lines=10)
+#     with gr.Row():
+#         model = gr.Dropdown(["GPT", "Claude"], label="Select model", value="GPT")
+#     with gr.Row():
+#         convert = gr.Button("Convert code")
+#     with gr.Row():
+#         python_run = gr.Button("Run Python")
+#         cpp_run = gr.Button("Run C++")
+#     with gr.Row():
+#         python_out = gr.TextArea(label="Python result:", elem_classes=["python"])
+#         cpp_out = gr.TextArea(label="C++ result:", elem_classes=["cpp"])
+
+#     convert.click(optimize, inputs=[python, model], outputs=[cpp])
+#     python_run.click(execute_python, inputs=[python], outputs=[python_out])
+#     cpp_run.click(execute_cpp, inputs=[cpp], outputs=[cpp_out])
+
+# ui.launch(inbrowser=True)
+
+tokenizer = AutoTokenizer.from_pretrained(code_qwen)
+messages = messages_for(pi)
+text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+#client = InferenceClient(CODE_QWEN_URL, token=hf_token)
+model = AutoModelForCausalLM.from_pretrained(code_qwen, device_map="auto")
+#stream = client.text_generation(text, stream=True, details=True, max_new_tokens=3000)
+# for r in stream:
+#     print(r.token.text, end = "")
+
+def stream_code_qwen(python):
+    try:
+        messages = messages_for(python)
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        print(f"Input text: {text[:100]}...")  # Print first 100 chars of input
+        
+        input_ids = tokenizer.encode(text, return_tensors="pt")
+        if torch.cuda.is_available():
+            input_ids = input_ids.to('cuda')
+        
+        result = ""
+        for i in range(3000):  # Max new tokens
+            try:
+                outputs = model.generate(
+                    input_ids,
+                    max_new_tokens=1,
+                    do_sample=True,
+                    temperature=0.7,
+                    pad_token_id=tokenizer.eos_token_id,
+                    return_dict_in_generate=True,
+                    output_scores=False,
+                )
+                
+                new_token = outputs.sequences[0][-1]
+                input_ids = torch.cat([input_ids, new_token.unsqueeze(0).unsqueeze(0)], dim=-1)
+                
+                new_text = tokenizer.decode(new_token, skip_special_tokens=True)
+                result += new_text
+                yield result
+                
+                if new_token.item() == tokenizer.eos_token_id:
+                    break
+            except Exception as e:
+                print(f"Error during token generation: {e}")
+                break
+    except Exception as e:
+        print(f"Error in stream_code_qwen: {e}")
+        yield f"Error: {str(e)}"
+
+def optimize(python, model):
+    if model=="GPT":
+        result = stream_gpt(python)
+    elif model=="Claude":
+        result = stream_claude(python)
+    elif model=="CodeQwen":
+        result = stream_code_qwen(python)
+    else:
+        raise ValueError("Unknown model")
+    for stream_so_far in result:
+        yield stream_so_far    
+
 with gr.Blocks(css=css) as ui:
     gr.Markdown("## Convert code from Python to C++")
     with gr.Row():
         python = gr.Textbox(label="Python code:", value=python_hard, lines=10)
         cpp = gr.Textbox(label="C++ code:", lines=10)
     with gr.Row():
-        model = gr.Dropdown(["GPT", "Claude"], label="Select model", value="GPT")
+        model_choice = gr.Dropdown(["GPT", "Claude", "CodeQwen"], label="Select model", value="GPT")
     with gr.Row():
         convert = gr.Button("Convert code")
     with gr.Row():
@@ -227,7 +321,7 @@ with gr.Blocks(css=css) as ui:
         python_out = gr.TextArea(label="Python result:", elem_classes=["python"])
         cpp_out = gr.TextArea(label="C++ result:", elem_classes=["cpp"])
 
-    convert.click(optimize, inputs=[python, model], outputs=[cpp])
+    convert.click(optimize, inputs=[python, model_choice], outputs=[cpp])
     python_run.click(execute_python, inputs=[python], outputs=[python_out])
     cpp_run.click(execute_cpp, inputs=[cpp], outputs=[cpp_out])
 
