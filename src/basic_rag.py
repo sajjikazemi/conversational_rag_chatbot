@@ -121,10 +121,10 @@ llm = ChatOpenAI(temperature=0.7, model_name=MODEL)
 memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
 
 # Create the retriever which is an abstraction over the VectorStore that RAG will use it
-retriever = vectorstore.as_retriever()
+retriever = vectorstore.as_retriever(search_kwargs={"k": 25})
 
 # Put everything together
-conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory, callbacks=[StdOutCallbackHandler()])
+conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
 
 query = "Can you describe Insurellm in a few sentences"
 result = conversation_chain.invoke({"question":query})
@@ -135,4 +135,4 @@ def chat(message, history):
     result = conversation_chain.invoke({"question": message})
     return result["answer"]
 
-#view = gr.ChatInterface(chat).launch()
+view = gr.ChatInterface(chat).launch()
