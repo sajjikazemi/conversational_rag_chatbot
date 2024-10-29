@@ -14,6 +14,9 @@ import numpy as np
 from sklearn.manifold import TSNE
 import plotly.graph_objects as go
 
+
+from langchain_core.callbacks import StdOutCallbackHandler
+
 MODEL = 'gpt-4o-mini'
 db_name = 'vector_db'
 
@@ -121,7 +124,7 @@ memory = ConversationBufferMemory(memory_key='chat_history', return_messages=Tru
 retriever = vectorstore.as_retriever()
 
 # Put everything together
-conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
+conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory, callbacks=[StdOutCallbackHandler()])
 
 query = "Can you describe Insurellm in a few sentences"
 result = conversation_chain.invoke({"question":query})
@@ -132,4 +135,4 @@ def chat(message, history):
     result = conversation_chain.invoke({"question": message})
     return result["answer"]
 
-view = gr.ChatInterface(chat).launch()
+#view = gr.ChatInterface(chat).launch()
