@@ -40,34 +40,92 @@ for dataset_name in dataset_names:
 
 print(f"A grand total of {len(items):,} items")
 
-# Plot the distribution of token counts again
-tokens = [item.token_count for item in items]
-plt.figure(figsize=(15, 6))
-plt.title(f"Token counts: Avg {sum(tokens)/len(tokens):,.1f} and highest {max(tokens):,}\n")
-plt.xlabel('Length (tokens)')
-plt.ylabel('Count')
-plt.hist(tokens, rwidth=0.7, color="skyblue", bins=range(0, 300, 10))
-plt.show()
+# # Plot the distribution of token counts again
+# tokens = [item.token_count for item in items]
+# plt.figure(figsize=(15, 6))
+# plt.title(f"Token counts: Avg {sum(tokens)/len(tokens):,.1f} and highest {max(tokens):,}\n")
+# plt.xlabel('Length (tokens)')
+# plt.ylabel('Count')
+# plt.hist(tokens, rwidth=0.7, color="skyblue", bins=range(0, 300, 10))
+# plt.show()
 
-# Plot the distribution of prices
-prices = [item.price for item in items]
-plt.figure(figsize=(15, 6))
-plt.title(f"Prices: Avg {sum(prices)/len(prices):,.1f} and highest {max(prices):,}\n")
+# # Plot the distribution of prices
+# prices = [item.price for item in items]
+# plt.figure(figsize=(15, 6))
+# plt.title(f"Prices: Avg {sum(prices)/len(prices):,.1f} and highest {max(prices):,}\n")
+# plt.xlabel('Price ($)')
+# plt.ylabel('Count')
+# plt.hist(prices, rwidth=0.7, color="blueviolet", bins=range(0, 1000, 10))
+# plt.show()
+
+# category_counts = Counter()
+# for item in items:
+#     category_counts[item.category]+=1
+
+# categories = category_counts.keys()
+# counts = [category_counts[category] for category in categories]
+
+# # Bar chart by category
+# plt.figure(figsize=(15, 6))
+# plt.bar(categories, counts, color="goldenrod")
+# plt.title('How many in each category')
+# plt.xlabel('Categories')
+# plt.ylabel('Count')
+
+# plt.xticks(rotation=30, ha='right')
+
+# # Add value labels on top of each bar
+# for i, v in enumerate(counts):
+#     plt.text(i, v, f"{v:,}", ha='center', va='bottom')
+
+# # Display the chart
+# plt.show()
+
+# Balancing the dataset
+slots = defaultdict(list)
+for item in items:
+    slots[round(item.price)].append(item)
+
+np.random.seed(42)
+random.seed(42)
+sample = []
+for i in range(1, 1000):
+    slot = slots[i]
+    if i>=240:
+        sample.extend(slot)
+    elif len(slot) <= 1200:
+        sample.extend(slot)
+    else:
+        weights = np.array([1 if item.category=='Automotive' else 5 for item in slot])
+        weights = weights / np.sun(weights)
+        selected_indices = np.random.choice(len(slot), size=1200, replace=False, p=weights)
+        selected = [slot[i] for i in selected_indices]
+        sample.extend(selected)
+
+print(f"There are {len(sample):,} items in the sample")
+
+# Plot the distribution of prices in sample
+prices = [float(item.price) for item in sample]
+plt.figure(figsize=(15, 10))
+plt.title(f"Avg {sum(prices)/len(prices):.2f} and highest {max(prices):,.2f}\n")
 plt.xlabel('Price ($)')
 plt.ylabel('Count')
-plt.hist(prices, rwidth=0.7, color="blueviolet", bins=range(0, 1000, 10))
+plt.hist(prices, rwidth=0.7, color="darkblue", bins=range(0, 1000, 10))
 plt.show()
 
+# Categories distributions
 category_counts = Counter()
-for item in items:
+for item in sample:
     category_counts[item.category]+=1
 
 categories = category_counts.keys()
 counts = [category_counts[category] for category in categories]
 
-# Bar chart by category
+# Create bar chart
 plt.figure(figsize=(15, 6))
-plt.bar(categories, counts, color="goldenrod")
+plt.bar(categories, counts, color="lightgreen")
+
+# Customize the chart
 plt.title('How many in each category')
 plt.xlabel('Categories')
 plt.ylabel('Count')
