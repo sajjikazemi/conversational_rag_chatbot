@@ -3,6 +3,8 @@ from tqdm import tqdm
 from datasets import load_dataset
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
+from items import Item
+
 CHUNK_SIZE = 1000
 MIN_PRICE = 0.5
 MAX_PRICE = 999.49
@@ -58,7 +60,7 @@ class ItemLoader:
         results = []
         chunk_count = (len(self.dataset) // CHUNK_SIZE) + 1
         with ProcessPoolExecutor(max_workers=workers) as pool:
-            for batch in tqdm(pool.map(self.from_chunk, self.chunk_generator()), total=chunk_count)
+            for batch in tqdm(pool.map(self.from_chunk, self.chunk_generator()), total=chunk_count):
                 results.extend(batch)
         for result in results:
             result.category = self.name
