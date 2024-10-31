@@ -14,6 +14,10 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.feature_extraction.text import CountVectorizer
+from gensim.models import Word2Vec
+from gensim.utils import simple_preprocess
+
 from tester import Tester
 
 # Different colors for printing in stdout
@@ -197,3 +201,15 @@ Tester.test(linear_regression_pricer, test)
 
 prices = np.array([float(item.price) for item in train])
 documents = [item.test_prompt() for item in train]
+
+# Use the CountVectorizer for a Bag of Words model
+vectorizer = CountVectorizer(max_features=1000, stop_words='english')
+X = vectorizer.fit_transform(documents)
+regressor = LinearRegression()
+regressor.fit(X, prices)
+
+def bow_lr_pricer(item):
+    x = vectorizer.transform([item.test_prompt()])
+    return max(regressor.predict(x)[0], 0)
+
+print(Tester.test(bow_lr_pricer, test))
