@@ -71,5 +71,5 @@ class Tester:
         self.report()
 
     @classmethod
-    def test(cls, function):
-        cls(function).run() 
+    def test(cls, function, data):
+        cls(function, data).run() 
