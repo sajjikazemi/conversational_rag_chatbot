@@ -17,6 +17,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer
 from gensim.models import Word2Vec
 from gensim.utils import simple_preprocess
+from sklearn.svm import LinearSVR
+from sklearn.ensemble import RandomForestRegressor
 
 from tester import Tester
 
@@ -213,3 +215,56 @@ def bow_lr_pricer(item):
     return max(regressor.predict(x)[0], 0)
 
 print(Tester.test(bow_lr_pricer, test))
+
+# The word2vec model, implemented in gensim NLP library
+np.random.seed(42)
+
+# Preprocess the documents
+processed_docs = [simple_preprocess(doc) for doc in documents]
+
+# Train Word2Vec model
+w2v_model = Word2Vec(sentences=processed_docs, vector_size=400, window=5, min_count=1, workers=8)
+
+# Taking the averaging vectors across the document
+def document_vector(doc):
+    doc_words = simple_preprocess(doc)
+    word_vectors = [w2v_model.wv[word] for word in doc_words if word in w2v_model.wv]
+    return np.mean(word_vectors, axis=0) if word_vectors else np.zeros(w2v_model.vector_size)
+
+# Create feature matrix
+X_w2v = np.array([document_vector(doc) for doc in documents])
+
+# Run Linear Regression on word2vec
+word2vec_lr_regressor = LinearRegression()
+word2vec_lr_regressor.fit(X_w2v, prices)
+
+def word2vec_lr_pricer(item):
+    doc = item.test_prompt()
+    doc_vector = document_vector(doc)
+    return max(0, word2vec_lr_regressor.predict([doc_vector])[0])
+
+print(Tester.test(word2vec_lr_pricer))
+
+#Now Support Vector Machine
+np.random.seed(42)
+svr_regressor = LinearSVR()
+svr_regressor.fit(X_w2v, prices)
+
+def svr_pricer(item):
+    np.random.seed(42)
+    doc = item.test_prompt()
+    doc_vector = document_vector(doc)
+    return max(float(svr_regressor.predict([doc_vector])[0]),0)
+
+print(Tester.test(svr_pricer))
+
+# Then random forest regression
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=8)
+rf_model.fit(X_w2v, prices)
+
+def random_forest_pricer(item):
+    doc = item.test_prompt()
+    doc_vector = document_vector(doc)
+    return max(0, rf_model.predict([doc_vector])[0])
+
+print(Tester.test(random_forest_pricer))
