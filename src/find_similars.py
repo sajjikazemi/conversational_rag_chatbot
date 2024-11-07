@@ -84,3 +84,10 @@ def gpt_4o_mini_rag(item):
     return get_price(reply)
 
 print(Tester.test(gpt_4o_mini_rag, test))
+
+# from agents.frontier_agent import FrontierAgent
+# agent = FrontierAgent(collection)
+# agent.price("Quadcast HyperX condenser mic for high quality podcasting")
+# from agents.specialist_agent import SpecialistAgent
+# agent2 = SpecialistAgent()
+# agent2.price("Quadcast HyperX condenser mic for high quality podcasting")
