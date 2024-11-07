@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 from datasets import load_dataset
 import chromadb
 from items import Item
-from testing import Tester
+from tester import Tester
 from agents.agent import Agent
 
 
