@@ -52,8 +52,8 @@ This collection of projects highlights proficiency across the AI development lif
 
 1.  **Clone Repository:**
     ```bash
-    git clone https://github.com/sajjikazemi/llm_practice.git
-    cd llm_practice
+    git clone https://github.com/sajjikazemi/conversational_rag_chatbot.git
+    cd conversational_rag_chatbot
     ```
 2.  **Environment Setup:**
     * Create and activate Python virtual environments (e.g., `python -m venv venv && source venv/bin/activate`). Consider separate environments if dependency conflicts arise between projects.
